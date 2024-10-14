@@ -178,7 +178,7 @@ class LoRAModel(AdapterModel):
         embedding_padding_modules: Optional[List[str]] = None,
     ) -> "LoRAModel":
         """Create a LoRAModel from a local checkpoint.
-        
+
         Args:
             lora_dir: The local path that has lora data.
             expected_lora_modules: Name of modules that are expected to be
@@ -330,6 +330,12 @@ class LoRAModelManager(AdapterModelManager):
         if hasattr(self.model, "supported_lora_modules"):
             self.supported_lora_modules = copy.deepcopy(
                 self.model.supported_lora_modules)
+            # drop lm_head, embed_tokens, o_proj
+            for module_name in ["lm_head", "embed_tokens", "o_proj"]:
+                if module_name in self.supported_lora_modules:
+                    self.supported_lora_modules.remove(module_name)
+                print(f"dropping {module_name} in a hard coded way")
+
             if lora_config.long_lora_scaling_factors:
                 # We need to replace rotary emb layer to do batch computation
                 # for long lora.
@@ -346,6 +352,7 @@ class LoRAModelManager(AdapterModelManager):
         self.modules: Dict[str, "BaseLayerWithLoRA"] = {}
         # Dict instead of a Set for compatibility with LRUCache.
         self._last_mapping: Optional[LoRAMapping] = None
+
         self._create_lora_modules()
         self.model.lora_manager = self
         self.adapter_type = 'LoRa'
@@ -413,6 +420,7 @@ class LoRAModelManager(AdapterModelManager):
             self.long_lora_context.offsets_by_lora_id[lora.id] = offsets
 
     def _add_adapter(self, lora: LoRAModel):
+
         self._create_merged_loras_inplace(lora)
         self._registered_adapters[lora.id] = lora
         self._set_long_lora_context(lora)
@@ -441,6 +449,7 @@ class LoRAModelManager(AdapterModelManager):
         self._active_adapters.clear()
 
     def _create_lora_modules(self):
+
         for module_name, module in self.model.named_modules(
                 remove_duplicate=False):
             if isinstance(module, PPMissingLayer):
@@ -493,6 +502,7 @@ class LoRAModelManager(AdapterModelManager):
             self._register_packed_modules(module_name)
             # All lora layers share the same punica_wrapper based on reference.
             new_module.set_mapping(self.punica_wrapper)
+
 
     def register_module(self, module_name: str, module: "BaseLayerWithLoRA"):
         assert isinstance(module, BaseLayerWithLoRA)
@@ -574,7 +584,7 @@ class LoRAModelManager(AdapterModelManager):
     def _filter_unsupported_mm_module(self, module_name: str) -> bool:
         """
         Regarding multimodal models, vLLM currently only supports adding LoRA to
-        language model. LoRA for other modules, such as the vision tower, will 
+        language model. LoRA for other modules, such as the vision tower, will
         be filtered out.
         """
         if self.supports_mm:
@@ -598,6 +608,7 @@ class LoRAModelManager(AdapterModelManager):
         ]
 
     def _create_merged_loras_inplace(self, lora_model: LoRAModel) -> None:
+
         for module_name, new_module_names in self.packed_modules.items():
             replacement_loras: List[Optional[LoRALayerWeights]] = []
             has_replacement = False
@@ -614,6 +625,7 @@ class LoRAModelManager(AdapterModelManager):
                 replacement_loras[i] = None
             lora_model.loras[module_name] = PackedLoRALayerWeights.pack(
                 replacement_loras)
+
 
     def deactivate_adapter(self, adapter_id: int) -> bool:
         return deactivate_adapter(adapter_id, self._active_adapters,

@@ -805,8 +805,8 @@ class BitsAndBytesModelLoader(BaseModelLoader):
             model_name_or_path: str,
             allowed_patterns: List[str],
             revision: Optional[str] = None) -> Tuple[List[str], str]:
-        """Retrieve weight files. Download the files if necessary. 
-        
+        """Retrieve weight files. Download the files if necessary.
+
         Return the weight files and the file pattern."""
         is_local = os.path.isdir(model_name_or_path)
 
@@ -1075,6 +1075,10 @@ class BitsAndBytesModelLoader(BaseModelLoader):
         if pre_quant:
             load_8bit = quant_config.get('load_in_8bit', False)
 
+        is_quantized_checkpoint = False
+
+
+
         qweight_iterator, quant_state_dict = \
             self._get_quantized_weights_iterator(
             model_config.model, model_config.revision, pre_quant, load_8bit)
@@ -1120,6 +1124,7 @@ class BitsAndBytesModelLoader(BaseModelLoader):
                         f"pack_factor not set for parameter {param_name}.")
 
                 num_elements = [0] * len(quant_states)
+
                 for seq, quant_state in quant_states.items():
                     num_elements[seq] = math.prod(
                         quant_state.shape) // pack_ratio

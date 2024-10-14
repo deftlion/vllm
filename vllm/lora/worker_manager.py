@@ -103,7 +103,9 @@ class WorkerLoRAManager(AbstractWorkerManager):
                 embedding_modules=self.embedding_modules,
                 embedding_padding_modules=self.embedding_padding_modules,
             )
+
         except Exception as e:
+            breakpoint()
             raise RuntimeError(f"Loading lora {lora_path} failed") from e
         if lora.rank > self.lora_config.max_lora_rank:
             raise ValueError(
@@ -202,7 +204,9 @@ class LRUCacheWorkerLoRAManager(WorkerLoRAManager):
                                   LRUCacheLoRAModelManager)
                 self._adapter_manager.remove_oldest_adapter()
             lora = self._load_adapter(lora_request)
+
             loaded = self._adapter_manager.add_adapter(lora)
+
         else:
             # If the lora is already loaded, just touch it to
             # update its position in the caches
