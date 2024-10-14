@@ -101,7 +101,18 @@ def parse_fine_tuned_lora_name(name: str) -> Tuple[str, bool]:
             module_name: the name of the module, e.g. model.dense1,
             is_lora_a whether the tensor is lora_a or lora_b.
     """
+    # replacements
+    # name = name.replace("base_model.", "base_model.model.")
+    # name = name.replace("w1", "gate_proj")
+    # name = name.replace("w2", "down_proj")
+    # name = name.replace("w3", "up_proj")
+    name = name.replace("_orig_mod.", "")
+    name = name.replace("output_proj", "o_proj")
+    # name = name.replace(".attn", ".self_attn")
+    # name = name.replace("base_model.model.model.", "base_model.model.model.layers.")
+
     parts = name.split(".")
+
 
     if len(parts) >= 2 and parts[0] == "base_model" and parts[1] == "model":
         if parts[-1] == "weight":

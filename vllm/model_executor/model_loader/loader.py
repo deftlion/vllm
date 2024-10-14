@@ -726,8 +726,8 @@ class BitsAndBytesModelLoader(BaseModelLoader):
             model_name_or_path: str,
             allowed_patterns: List[str],
             revision: Optional[str] = None) -> Tuple[List[str], str]:
-        """Retrieve weight files. Download the files if necessary. 
-        
+        """Retrieve weight files. Download the files if necessary.
+
         Return the weight files and the file pattern."""
         is_local = os.path.isdir(model_name_or_path)
 
@@ -849,9 +849,13 @@ class BitsAndBytesModelLoader(BaseModelLoader):
                                                      temp_state_dict)
                     weight_name = weight_name.replace(".weight", ".qweight")
                     quant_state_dict[weight_name] = quant_state
+                    # if "k_proj" in weight_name:
+                    #     breakpoint()
                     yield weight_name.replace(".weight",
                                               ".qweight"), weight_tensor
                 else:
+                    # if "k_proj" in weight_name:
+                    #     breakpoint()
                     yield weight_name, weight_tensor
 
         def generator() -> Generator:
@@ -872,10 +876,13 @@ class BitsAndBytesModelLoader(BaseModelLoader):
                 else:
                     processed_weight = weight_tensor
 
+                # if "k_proj" in weight_name:
+                #         breakpoint()
                 yield weight_name, processed_weight
 
         if pre_quant:
             return quantized_checkpoint(), quant_state_dict
+
         return generator(), quant_state_dict
 
     def _load_weights(self, model_config: ModelConfig,
@@ -899,6 +906,10 @@ class BitsAndBytesModelLoader(BaseModelLoader):
         if quant_config is not None and quant_config.get(
                 'quant_method') == "bitsandbytes":
             is_quantized_checkpoint = True
+
+        is_quantized_checkpoint = False
+
+
 
         qweight_iterator, quant_state_dict = \
             self._get_quantized_weights_iterator(
@@ -945,6 +956,7 @@ class BitsAndBytesModelLoader(BaseModelLoader):
                         f"pack_factor not set for parameter {param_name}.")
 
                 num_elements = [0] * len(quant_states)
+
                 for seq, quant_state in quant_states.items():
                     num_elements[seq] = math.prod(
                         quant_state.shape) // pack_ratio
