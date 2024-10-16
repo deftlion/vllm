@@ -332,6 +332,8 @@ class LoRAModelManager(AdapterModelManager):
                 self.model.supported_lora_modules)
             # drop lm_head, embed_tokens, o_proj
             for module_name in ["lm_head", "embed_tokens", "o_proj"]:
+                if hasattr(lora_config, "target_modules") and module_name == "lm_head" and "lm_head" in lora_config.target_modules:
+                    continue
                 if module_name in self.supported_lora_modules:
                     self.supported_lora_modules.remove(module_name)
                 print(f"dropping {module_name} in a hard coded way")
@@ -352,7 +354,6 @@ class LoRAModelManager(AdapterModelManager):
         self.modules: Dict[str, "BaseLayerWithLoRA"] = {}
         # Dict instead of a Set for compatibility with LRUCache.
         self._last_mapping: Optional[LoRAMapping] = None
-
         self._create_lora_modules()
         self.model.lora_manager = self
         self.adapter_type = 'LoRa'
